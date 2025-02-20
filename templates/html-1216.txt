@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deck.gl with OpenStreetMap</title>
+
+    <!-- Deck.gl 和依赖库 -->
+    <script src="https://unpkg.com/deck.gl@8.8.0/dist.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@luma.gl/core@8.5.2/dist/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@luma.gl/webgl@8.5.2/dist/index.min.js"></script>
+
+    <!-- Leaflet 样式与库 -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <!-- Flatpickr 样式与脚本 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <!-- 自定义样式 -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div id="controls">
+        <h3>Near Missing Events Map</h3>
+        
+        <!-- 日期选择框 -->
+        <label for="date-picker">Choose a date:</label>
+        <input type="text" id="date-picker" placeholder="YYYY-MM-DD" onchange="validateData()">
+
+        <!-- 按小时选择 -->
+        <label><input type="checkbox" id="hour-checkbox" onchange="toggleHourSelection()"> Select by Hour</label>
+        <select id="hour-picker" style="display:none;"></select>
+
+        <!-- 按时间段选择 -->
+        <label><input type="checkbox" id="time-of-day-checkbox" onchange="toggleTimeOfDaySelection()"> Select by Time of Day</label>
+        <select id="time-of-day-picker" style="display:none;">
+            <option value="morning">Morning (6AM-12PM)</option>
+            <option value="afternoon">Afternoon (1PM-6PM)</option>
+            <option value="evening">Evening (7PM-10PM)</option>
+            <option value="night">Night (11PM-5AM)</option>
+        </select>
+
+        <!-- 添加图层按钮 -->
+        <button onclick="addSelectedDataToLayer()">Add to Layer</button>
+
+        <!-- 图层列表 -->
+        <h4>Layers</h4>
+        <ul id="layer-list"></ul>
+    </div>
+
+    <!-- 地图容器 -->
+    <div id="map"></div>
+
+    <!-- 自定义脚本 -->
+    <script src="/static/js/map.js"></script>
+
+    <!-- 初始化 Flatpickr -->
+    <script>
+        flatpickr("#date-picker", {
+            dateFormat: "Y-m-d", // 设置日期格式为 YYYY-MM-DD
+            locale: "en",        // 保持语言为英文
+        });
+    </script>
+</body>
+</html>

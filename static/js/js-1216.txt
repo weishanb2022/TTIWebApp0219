@@ -1,0 +1,430 @@
+            const INITIAL_VIEW_STATE = {
+                longitude: -98.4936,
+                latitude: 29.4241,
+                zoom: 10,
+                pitch: 0,
+                bearing: 0,
+            };
+
+            let deckMap;
+            let layers = [];
+            let popupElement;
+            let miniMap;
+			let totalPoints = 0;
+		
+            function initializeMap() {
+                deckMap = new deck.DeckGL({
+                    container: 'map',
+                    initialViewState: INITIAL_VIEW_STATE,
+                    controller: true,
+					onClick: handleClick,
+                    layers: [
+                        new deck.TileLayer({
+                            id: 'tile-layer',
+                            data: 'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            minZoom: 0,
+                            maxZoom: 19,
+                            tileSize: 256,
+							renderSubLayers: (props) => {
+								const {
+									bbox: { west, south, east, north }
+								} = props.tile;
+
+								const {x, y, z} = props.tile;
+								const id = `bitmap-layer-${z}-${x}-${y}`; // 使用瓦片的 x, y, z 值来构建唯一的 ID
+
+								return new deck.BitmapLayer({
+									id: id,
+									data: null,
+									image: props.data,
+									bounds: [west, south, east, north], // 确保这里使用的变量已经定义
+								});
+							},
+                        }),
+                    ],
+                });
+
+                popupElement = document.createElement('div');
+                popupElement.id = 'popup';
+                popupElement.style.position = 'absolute';
+                popupElement.style.background = 'white';
+                popupElement.style.border = '1px solid #ccc';
+                popupElement.style.padding = '10px';
+                popupElement.style.borderRadius = '8px';
+                popupElement.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
+                popupElement.style.display = 'none';
+                popupElement.style.width = '600px';
+                popupElement.style.height = '300px';
+				popupElement.style.overflow = 'hidden'; // 防止内容溢出
+				popupElement.style.display = 'flex'; // 弹窗内容左右排列
+				// 创建弹窗的内容容器（HTML 结构）
+				popupElement.innerHTML = `
+					<div style="display: flex; width: 100%; height: 100%;">
+						<!-- 属性信息 -->
+						<div id="attribute-info" style="flex: 1; padding-right: 10px; overflow-y: auto;">
+						</div>
+						<!-- 小地图 -->
+						<div id="minimap-container" style="flex: 1; height: 100%;"></div>
+					</div>
+				`;
+				
+                document.body.appendChild(popupElement);
+				setupDocumentClickListener();
+				setupPopupClickListener();				
+            }
+
+			function validateData() {
+				// 获取 Flatpickr 的日期值
+				const dateInput = document.getElementById('date-picker');
+				const selectedDate = dateInput.value; // Flatpickr 已格式化为 "YYYY-MM-DD"
+
+				if (!selectedDate) {
+					alert('Please select a date.');
+					return;
+				}
+
+				// 构造文件路径
+				const folderPath = `static/uploads/${selectedDate}`;
+				let fileChecks = [];
+
+				// 检查每个小时的文件
+				for (let i = 0; i < 24; i++) {
+					let hour = i.toString().padStart(2, '0');
+					let geoJsonPath = `${folderPath}/${hour}.geojson`;
+					let csvPath = `${folderPath}/${hour}.csv`;
+
+					let geoJsonCheck = fetch(geoJsonPath)
+						.then(response => {
+							if (!response.ok) throw new Error(`GeoJSON file missing for hour ${hour}`);
+						});
+
+					let csvCheck = fetch(csvPath)
+						.then(response => {
+							if (!response.ok) throw new Error(`CSV file missing for hour ${hour}`);
+						});
+
+					fileChecks.push(geoJsonCheck, csvCheck);
+				}
+
+				// 异步检查文件完整性
+				Promise.all(fileChecks)
+					.then(() => {
+						alert('Data is complete for the selected date.');
+					})
+					.catch(error => {
+						console.error(error);
+						alert('Some data is missing for the selected date.');
+					});
+			}
+
+			function toggleHourSelection() {
+				let hourPicker = document.getElementById('hour-picker');
+				let timeOfDayPicker = document.getElementById('time-of-day-picker');
+				let timeOfDayCheckbox = document.getElementById('time-of-day-checkbox');
+				
+				if (document.getElementById('hour-checkbox').checked) {
+					clearMapLayers(); // Clear all map layers
+					hourPicker.style.display = 'block';
+					populateHourPicker();
+					timeOfDayPicker.style.display = 'none';
+					timeOfDayCheckbox.checked = false; // Uncheck and disable time of day selection
+				} else {
+					hourPicker.style.display = 'none';
+				}
+			}
+
+			function toggleTimeOfDaySelection() {
+				let hourPicker = document.getElementById('hour-picker');
+				let timeOfDayPicker = document.getElementById('time-of-day-picker');
+				let hourCheckbox = document.getElementById('hour-checkbox');
+				
+				if (document.getElementById('time-of-day-checkbox').checked) {
+					clearMapLayers(); // Clear all map layers
+					timeOfDayPicker.style.display = 'block';
+					hourPicker.style.display = 'none';
+					hourCheckbox.checked = false; // Uncheck and disable hour selection
+				} else {
+					timeOfDayPicker.style.display = 'none';
+				}
+			}
+
+            function populateHourPicker() {
+                let hourPicker = document.getElementById('hour-picker');
+                hourPicker.innerHTML = '';
+                for (let i = 0; i < 24; i++) {
+                    let hour = i.toString().padStart(2, '0');
+                    let option = document.createElement('option');
+                    option.value = hour;
+                    option.textContent = `${hour}:00`;
+                    hourPicker.appendChild(option);
+                }
+            }
+
+			function addSelectedDataToLayer() {
+				if (document.getElementById('hour-checkbox').checked) {
+					loadGeoJsonForHour();
+				} else if (document.getElementById('time-of-day-checkbox').checked) {
+					loadTimeOfDayFiles();
+				}
+			}
+
+			function loadGeoJsonForHour() {
+				const selectedDate = document.getElementById('date-picker').value; // 格式是 YYYY-MM-DD
+				const selectedHour = document.getElementById('hour-picker').value; // 小时 HH
+				const folderPath = `static/uploads/${selectedDate}`;
+				const geoJsonPath = `${folderPath}/${selectedHour}.geojson`;
+
+				fetch(geoJsonPath)
+					.then(response => response.json())
+					.then(geojson => {
+						const layerName = `${selectedDate}-${selectedHour} GeoJSON`;
+						const layerId = `geojson-layer-${selectedDate}-${selectedHour}`;
+						const randomColor = [Math.random() * 255, Math.random() * 255, Math.random() * 255, 200];
+						addGeoJsonLayer(geojson, layerId, layerName, randomColor);
+					})
+					.catch(error => {
+						console.error('Error loading GeoJSON:', error);
+						alert('Failed to load GeoJSON.');
+					});
+			}
+
+			function loadTimeOfDayFiles() {
+				const selectedDate = document.getElementById('date-picker').value;
+				const timeOfDay = document.getElementById('time-of-day-picker').value;
+				const timeRanges = {
+					morning: ["06", "07", "08", "09", "10", "11"],
+					afternoon: ["12", "13", "14", "15", "16", "17"],
+					evening: ["18", "19", "20", "21"],
+					night: ["22", "23", "00", "01", "02", "03", "04", "05"]
+				};
+
+				const folderPath = `static/uploads/${selectedDate}`;
+				const times = timeRanges[timeOfDay];
+				let promises = [];
+
+				times.forEach(hour => {
+					const geoJsonPath = `${folderPath}/${hour}.geojson`;
+					const promise = fetch(geoJsonPath)
+						.then(response => {
+							if (!response.ok) {
+								throw new Error(`Failed to load data for ${hour}:00 on ${selectedDate}`);
+							}
+							return response.json();
+						})
+						.then(geojson => {
+							const layerName = `${selectedDate}-${hour}:00 ${timeOfDay}`;
+							const layerId = `geojson-layer-${selectedDate}-${hour}`;
+							const randomColor = getTimeOfDayColor(timeOfDay);
+							addGeoJsonLayer(geojson, layerId, layerName, randomColor);
+						})
+						.catch(error => {
+							console.error('Error loading GeoJSON:', error);
+						});
+					promises.push(promise);
+				});
+
+				Promise.all(promises).then(() => {
+					console.log("All time of day files loaded.");
+				}).catch(error => {
+					console.error("Some files failed to load:", error);
+				});
+			}
+
+            function getTimeOfDayColor(timeOfDay) {
+                const colors = {
+                    morning: [253, 184, 99, 200],  // Orange
+                    afternoon: [57, 106, 177, 200],  // Blue
+                    evening: [218, 124, 48, 200],  // Dark Orange
+                    night: [62, 150, 81, 200]  // Green
+                };
+                return colors[timeOfDay];
+            }
+
+			function addGeoJsonLayer(geojson, layerId, layerName, fillColor = null, timeOfDay = null) {
+				// Check if the layer is already added
+				const isLayerExists = layers.some(layer => layer.id === layerId);
+				if (isLayerExists) {
+					alert("This layer has already been added.");
+					return; // Exit the function if the layer already exists
+				}
+
+				// Get color for the layer
+				const color = fillColor || getColorForLayer(timeOfDay);
+
+				const geoJsonLayer = new deck.GeoJsonLayer({
+					id: layerId,
+					data: geojson,
+					pickable: true,
+					stroked: true,
+					filled: true,
+					extruded: false,
+					lineWidthScale: 0.001,
+					lineWidthMinPixels: 0.001,
+					getFillColor: color,
+					getLineColor: [255, 100, 100],
+					getPointRadius: 20,
+					getLineWidth: 1,
+					onClick: handleClick,
+				});
+
+				// Save layer information including color
+				layers.push({ id: layerId, name: layerName, layer: geoJsonLayer, visible: true, color });
+
+				updateLayerList(); // Update layer list
+				updateMapLayers(); // Update map
+			}
+
+			function updateLayerList() {
+				const layerList = document.getElementById('layer-list');
+				layerList.innerHTML = ''; // Clear existing list
+
+				layers.forEach((layerInfo) => {
+					const li = document.createElement('li');
+					li.style.display = 'flex';
+					li.style.alignItems = 'center';
+					li.style.marginBottom = '5px';
+
+					// Add color preview
+					const colorPreview = document.createElement('div');
+					colorPreview.style.width = '15px';
+					colorPreview.style.height = '15px';
+					colorPreview.style.borderRadius = '50%';
+					colorPreview.style.marginRight = '10px';
+					colorPreview.style.backgroundColor = `rgba(${layerInfo.color.join(',')})`; // Use the layer's color
+
+					// Add layer name
+					const nameSpan = document.createElement('span');
+					nameSpan.textContent = layerInfo.name;
+
+					// Add delete button
+					const deleteButton = document.createElement('button');
+					deleteButton.textContent = 'Delete';
+					deleteButton.style.marginLeft = '10px';
+					deleteButton.onclick = () => {
+						layers = layers.filter((l) => l.id !== layerInfo.id);
+						updateLayerList(); // Update the list after deletion
+						updateMapLayers(); // Refresh map layers
+					};
+
+					// Append elements to the list item
+					li.appendChild(colorPreview);
+					li.appendChild(nameSpan);
+					li.appendChild(deleteButton);
+
+					// Append the list item to the layer list
+					layerList.appendChild(li);
+				});
+			}
+
+			function updateMapLayers() {
+				const tileLayer = new deck.TileLayer({
+					id: 'tile-layer',
+					data: 'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+					minZoom: 0,
+					maxZoom: 19,
+					tileSize: 256,
+					renderSubLayers: (props) => {
+						const {
+							bbox: { west, south, east, north }
+						} = props.tile;
+
+						const { x, y, z } = props.tile;
+						const id = `bitmap-layer-${z}-${x}-${y}`;
+
+						return new deck.BitmapLayer({
+							id: id,
+							data: null,
+							image: props.data,
+							bounds: [west, south, east, north],
+						});
+					},
+				});
+
+				// Filter to only include visible layers
+				const visibleLayers = layers.filter(layerInfo => layerInfo.visible).map(layerInfo => layerInfo.layer);
+
+				// Set the new layer array on the map
+				deckMap.setProps({
+					layers: [tileLayer, ...visibleLayers],
+				});
+			}
+			function handleClick(info) {
+				if (info.object && info.layer) {
+					const { x, y } = info; // 屏幕坐标
+					const { geometry, properties } = info.object;
+					const [longitude, latitude] = geometry.coordinates;
+
+					// 获取图层 ID
+					const layerId = info.layer.id;
+
+					// 查找图层的名称
+					const layerInfo = layers.find(layer => layer.id === layerId);
+					const layerName = layerInfo ? layerInfo.name : 'Unknown Layer';
+
+					// 设置弹窗位置并显示
+					popupElement.style.left = `${x}px`;
+					popupElement.style.top = `${y}px`;
+					popupElement.style.display = 'block';
+
+					// 更新弹窗内容，包括图层名称
+					const attributeInfo = document.getElementById('attribute-info');
+					attributeInfo.innerHTML = `
+						<p><strong>Layer Name:</strong> ${layerName}</p>
+						${generateAttributeHTML(properties)}
+					`;
+
+					// 初始化或更新小地图
+					if (!miniMap) {
+						initializeMiniMap(popupElement.querySelector('#minimap-container'), longitude, latitude);
+					} else {
+						miniMap.setView([latitude, longitude], 16);
+					}
+				}
+			}
+
+			// 生成属性内容的 HTML
+			function generateAttributeHTML(properties) {
+				if (!properties) return '<p>No additional information available.</p>';
+				return Object.keys(properties)
+					.map((key) => `<p><strong>${key}:</strong> ${properties[key]}</p>`)
+					.join('');
+			}
+
+			// 点击文档时关闭弹窗
+			function setupDocumentClickListener() {
+				document.addEventListener('click', (event) => {
+					// 检查点击目标是否在弹窗或弹窗内的内容上
+					if (!popupElement.contains(event.target)) {
+						popupElement.style.display = 'none'; // 隐藏弹窗
+					}
+				});
+			}
+
+			// 防止弹窗点击关闭自身
+			function setupPopupClickListener() {
+				popupElement.addEventListener('click', (event) => {
+					event.stopPropagation(); // 防止冒泡到 document
+				});
+			}
+
+			function initializeMiniMap(container, lng, lat) {
+				const miniMapContainer = document.createElement('div');
+				miniMapContainer.style.width = '100%';
+				miniMapContainer.style.height = '100%';
+				container.appendChild(miniMapContainer);
+
+				miniMap = L.map(miniMapContainer).setView([lat, lng], 16);
+
+				L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+					attribution: '&copy; OpenStreetMap contributors',
+					subdomains: ['a', 'b', 'c'],
+				}).addTo(miniMap);
+			}
+			
+			function clearMapLayers() {
+				layers = []; // Clear the layers array
+				updateLayerList(); // Update the layer list in the UI
+				updateMapLayers(); // Refresh the map to show only the base layer
+			}			
+
+            initializeMap();

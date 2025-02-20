@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deck.gl with OpenStreetMap</title>
+
+    <script src="https://unpkg.com/deck.gl@8.8.0/dist.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@luma.gl/core@8.5.2/dist/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@luma.gl/webgl@8.5.2/dist/index.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    <script src="https://unpkg.com/@deck.gl/aggregation-layers@8.8.0/dist.min.js"></script>
+    <script src="https://unpkg.com/@deck.gl/layers@8.8.0/dist.min.js"></script>
+
+
+
+
+
+
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div id="controls">
+        <h3>Near Missing Events Map</h3>
+                <!-- 文件夹选择 -->
+        <div class="control-item">
+            <label for="folder-picker">Choose interest of area:</label>
+            <select id="folder-picker" onchange="loadFilesFromFolder()">
+                <option value="">Select Folder</option>
+            </select>
+        </div>
+
+        <!-- 日期选择 -->
+        <div class="control-item">
+            <label for="date-picker">Choose a date:</label>
+            <input type="text" id="date-picker" placeholder="YYYY-MM-DD" onchange="validateData()">
+        </div>
+
+
+
+ <!--
+    <div class="control-item">
+        <label for="file-picker">Choose a file:</label>
+        <select id="file-picker">
+            <option value="">Select File</option>
+        </select>
+    </div>
+-->
+
+        <!-- 按小时选择 -->
+        <div class="control-item">
+            <label><input type="checkbox" id="hour-checkbox" onchange="toggleHourSelection()"> Select by Hour</label>
+            <select id="hour-picker" style="display:none;"></select>
+        </div>
+
+        <!-- 按时间段选择 -->
+        <div class="control-item">
+            <label><input type="checkbox" id="time-of-day-checkbox" onchange="toggleTimeOfDaySelection()"> Select by Time of Day</label>
+            <select id="time-of-day-picker" style="display:none;">
+                <option value="morning">Morning (6AM-12PM)</option>
+                <option value="afternoon">Afternoon (1PM-6PM)</option>
+                <option value="evening">Evening (7PM-10PM)</option>
+                <option value="night">Night (11PM-5AM)</option>
+            </select>
+        </div>
+
+        <!-- 添加图层按钮 -->
+        <div class="control-item">
+            <button onclick="addSelectedDataToLayer()">Add to Layer</button>
+        </div>
+                <!-- 图层列表 -->
+        <h4>Layer List</h4>
+        <ul id="layer-list"></ul>
+                <!-- 选择已加载图层 -->
+
+        <div class="control-item">
+            <label for="layer-selector">Select Layer for Heat Map:</label>
+            <select id="layer-selector">
+                <option value="">Select Layer</option>
+            </select>
+        </div>
+
+        <!-- Heat Map Analysis 按钮下，添加 TTC 范围输入框 -->
+        <div class="control-item">
+            <label for="min-ttc">TTC Min:</label>
+            <input type="number" id="min-ttc" placeholder="0">
+        </div>
+        <div class="control-item">
+            <label for="max-ttc">TTC Max:</label>
+            <input type="number" id="max-ttc" placeholder="1">
+        </div>
+        <div class="control-item">
+            <button onclick="generateHeatMap()">Heat Map Analysis</button>
+        </div>
+
+                <!-- 热力图图层列表 -->
+        <h4>Heat Map Layer List</h4>
+        <ul id="heatMapLayerList"></ul>
+
+
+    </div>
+
+    <!-- 地图容器 -->
+    <div id="map"></div>
+
+    <!-- CSV 弹窗 -->
+    <div id="csv-popup" style="display: none;">
+        <div id="csv-popup-content"></div>
+        <button onclick="document.getElementById('csv-popup').style.display = 'none';">Close</button>
+    </div>
+
+    <!-- 自定义脚本 -->
+    <script src="/static/js/map.js"></script>
+	    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.polylineDecorator/1.7.0/leaflet.polylineDecorator.min.js"></script>
+
+    <!-- 初始化 Flatpickr -->
+    <script>
+        flatpickr("#date-picker", {
+            dateFormat: "Y-m-d", // 设置日期格式为 YYYY-MM-DD
+            locale: "en",        // 保持语言为英文
+        });
+    </script>
+</body>
+</html>

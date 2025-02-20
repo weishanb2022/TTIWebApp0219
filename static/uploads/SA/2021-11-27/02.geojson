@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "02",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "geoid": 0, "lat1": 29.539085, "lon1": -98.584568, "time1": 8286, "speed1": 70.27, "heading1": 221.0, "category1": 13868360, "lat2": 29.539198, "lon2": -98.584435, "time2": 8283, "speed2": 89.85, "heading2": 222.0, "category2": 6228858, "lat3": 29.53863611810856, "lon3": -98.585016501041594, "ang3": 0.99991843577664596, "TTC": 3.3655975091692283 }, "geometry": { "type": "Point", "coordinates": [ -98.585016501041594, 29.53863611810856 ] } },
+{ "type": "Feature", "properties": { "geoid": 1, "lat1": 29.538687, "lon1": -98.584965, "time1": 8289, "speed1": 69.11, "heading1": 220.0, "category1": 13868360, "lat2": 29.538696, "lon2": -98.584952, "time2": 8286, "speed2": 89.85, "heading2": 221.0, "category2": 6228858, "lat3": 29.538571495515047, "lon3": -98.585076398917536, "ang3": 0.99998409843666958, "TTC": 0.73427410098018142 }, "geometry": { "type": "Point", "coordinates": [ -98.585076398917536, 29.538571495515047 ] } }
+]
+}
