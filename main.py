@@ -5,7 +5,7 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-UPLOAD_PATH = "static/uploads"
+UPLOAD_PATH = "/test/uploads"
 
 # 根路径，返回首页
 @app.route('/')
