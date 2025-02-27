@@ -2,11 +2,11 @@ from flask import Flask, render_template, request, jsonify, Response
 import os
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = '/mnt/azurefile/web-app-storage/uploads'
+app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-UPLOAD_PATH = "/mnt/azurefile/web-app-storage/uploads"
-
+UPLOAD_PATH = "uploads"
+print(f"Reading from path: {UPLOAD_PATH}")  # 这条信息会显示在日志中
 # 根路径，返回首页
 @app.route('/')
 def index():
@@ -16,7 +16,7 @@ def index():
 @app.route('/folders', methods=['GET'])
 def get_folders():
     try:
-        print(f"Reading from path: {UPLOAD_PATH}")  # 这条信息会显示在日志中
+        
         folders = [folder for folder in os.listdir(UPLOAD_PATH) if os.path.isdir(os.path.join(UPLOAD_PATH, folder))]
         return jsonify(folders)
     except Exception as e:
