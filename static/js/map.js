@@ -142,7 +142,7 @@
                 }
 
                 // 构造文件路径
-                const folderPath = `/mnt/azurefile/web-app-storage/uploads/${folder}/${selectedDate}`;
+                const folderPath = `mnt/azurefile/web-app-storage/uploads/${folder}/${selectedDate}`;
                 let missingFilesCount = 0;  // 用来计数缺失的文件数量
                 const allowedMissingFiles = 23;  // 允许最多缺失的文件小时数
 
@@ -288,7 +288,7 @@
 				const selectedDate = document.getElementById('date-picker').value; // 格式是 YYYY-MM-DD
 				const selectedHour = document.getElementById('hour-picker').value; // 小时 HH
                 const folder = document.getElementById('folder-picker').value; // 获取选择的文件夹
-                const folderPath = `/mnt/azurefile/web-app-storage/uploads/${folder}/${selectedDate}`; // 包含文件夹和日期
+                const folderPath = `mnt/azurefile/web-app-storage/uploads/${folder}/${selectedDate}`; // 包含文件夹和日期
                 const geoJsonPath = `${folderPath}/${selectedHour}.geojson`;
 
 				fetch(geoJsonPath)
@@ -316,7 +316,7 @@
                     night: ["22", "23", "00", "01", "02", "03", "04", "05"]
                 };
 
-                const folderPath = `/mnt/azurefile/web-app-storage/uploads/${folder}/${selectedDate}`; // 包含文件夹和日期
+                const folderPath = `mnt/azurefile/web-app-storage/uploads/${folder}/${selectedDate}`; // 包含文件夹和日期
                 const times = timeRanges[timeOfDay];
                 let promises = [];
 
