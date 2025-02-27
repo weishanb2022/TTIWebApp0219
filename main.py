@@ -2,10 +2,10 @@ from flask import Flask, render_template, request, jsonify, Response
 import os
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = '/mnt/azurefile/web-app-storage/uploads/uploads'
+app.config['UPLOAD_FOLDER'] = '/mnt/azurefile/web-app-storage/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-UPLOAD_PATH = "/mnt/azurefile/web-app-storage/uploads/uploads"
+UPLOAD_PATH = "/mnt/azurefile/web-app-storage/uploads"
 print(f"Reading from path: {UPLOAD_PATH}")  # 这条信息会显示在日志中
 # 根路径，返回首页
 @app.route('/')
