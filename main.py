@@ -16,6 +16,7 @@ def index():
 @app.route('/folders', methods=['GET'])
 def get_folders():
     try:
+        print(f"Reading from path: {UPLOAD_PATH}")  # 这条信息会显示在日志中
         folders = [folder for folder in os.listdir(UPLOAD_PATH) if os.path.isdir(os.path.join(UPLOAD_PATH, folder))]
         return jsonify(folders)
     except Exception as e:
