@@ -284,26 +284,44 @@
 				}
 			}
 
-			function loadGeoJsonForHour() {
-				const selectedDate = document.getElementById('date-picker').value; // 格式是 YYYY-MM-DD
-				const selectedHour = document.getElementById('hour-picker').value; // 小时 HH
+            function loadGeoJsonForHour() {
+                const selectedDate = document.getElementById('date-picker').value; // 格式是 YYYY-MM-DD
+                const selectedHour = document.getElementById('hour-picker').value; // 小时 HH
                 const folder = document.getElementById('folder-picker').value; // 获取选择的文件夹
                 const folderPath = `static/uploads/${folder}/${selectedDate}`; // 包含文件夹和日期
                 const geoJsonPath = `${folderPath}/${selectedHour}.geojson`;
 
-				fetch(geoJsonPath)
-					.then(response => response.json())
-					.then(geojson => {
-						const layerName = `${selectedDate}-${selectedHour}:00`;
-						const layerId = `geojson-layer-${selectedDate}-${selectedHour}`;
-						const randomColor = [Math.random() * 255, Math.random() * 255, Math.random() * 255, 200];
-						addGeoJsonLayer(geojson, layerId, layerName, randomColor,selectedFolder);
-					})
-					.catch(error => {
-						console.error('Error loading GeoJSON:', error);
-						alert('Failed to load GeoJSON.');
-					});
-			}
+                // 获取 TTC 范围
+                const ttcMin = parseFloat(document.getElementById('layer-ttc-min').value);
+                const ttcMax = parseFloat(document.getElementById('layer-ttc-max').value);
+
+                if (isNaN(ttcMin) || isNaN(ttcMax)) {
+                    alert('Please enter valid TTC values.');
+                    return;
+                }
+
+                fetch(geoJsonPath)
+                    .then(response => response.json())
+                    .then(geojson => {
+                        // 筛选出 TTC 在指定范围内的点
+                        const filteredGeoJson = {
+                            type: "FeatureCollection",
+                            features: geojson.features.filter(feature => {
+                                const ttc = feature.properties.TTC;
+                                return ttc >= ttcMin && ttc <= ttcMax;
+                            })
+                        };
+
+                        const layerName = `${selectedDate}-${selectedHour}:00`;
+                        const layerId = `geojson-layer-${selectedDate}-${selectedHour}`;
+                        const randomColor = [Math.random() * 255, Math.random() * 255, Math.random() * 255, 200];
+                        addGeoJsonLayer(filteredGeoJson, layerId, layerName, randomColor, selectedFolder);
+                    })
+                    .catch(error => {
+                        console.error('Error loading GeoJSON:', error);
+                        alert('Failed to load GeoJSON.');
+                    });
+            }
 
             function loadTimeOfDayFiles() {
                 const selectedDate = document.getElementById('date-picker').value;
@@ -320,6 +338,15 @@
                 const times = timeRanges[timeOfDay];
                 let promises = [];
 
+                // 获取 TTC 范围
+                const ttcMin = parseFloat(document.getElementById('layer-ttc-min').value);
+                const ttcMax = parseFloat(document.getElementById('layer-ttc-max').value);
+
+                if (isNaN(ttcMin) || isNaN(ttcMax)) {
+                    alert('Please enter valid TTC values.');
+                    return;
+                }
+
                 times.forEach(hour => {
                     const geoJsonPath = `${folderPath}/${hour}.geojson`; // 这里的路径需要包含文件夹和日期
                     const promise = fetch(geoJsonPath)
@@ -330,10 +357,19 @@
                             return response.json();
                         })
                         .then(geojson => {
+                            // 筛选出 TTC 在指定范围内的点
+                            const filteredGeoJson = {
+                                type: "FeatureCollection",
+                                features: geojson.features.filter(feature => {
+                                    const ttc = feature.properties.TTC;
+                                    return ttc >= ttcMin && ttc <= ttcMax;
+                                })
+                            };
+
                             const layerName = `${selectedDate}-${hour}:00`;
                             const layerId = `geojson-layer-${selectedDate}-${hour}`;
                             const randomColor = getTimeOfDayColor(timeOfDay);
-                            addGeoJsonLayer(geojson, layerId, layerName, randomColor,selectedFolder);
+                            addGeoJsonLayer(filteredGeoJson, layerId, layerName, randomColor, folder);
                         })
                         .catch(error => {
                             console.error('Error loading GeoJSON:', error);
@@ -828,8 +864,8 @@
                     return;
                 }
                 // 获取用户输入的 TTC 范围
-                const minTTC = parseFloat(document.getElementById('min-ttc').value);
-                const maxTTC = parseFloat(document.getElementById('max-ttc').value);
+                const minTTC = parseFloat(document.getElementById('layer-ttc-min').value);
+                const maxTTC = parseFloat(document.getElementById('layer-ttc-min').value);
                 if (isNaN(minTTC) || isNaN(maxTTC)) {
                     alert('Please enter a valid TTC range.');
                     return;
