@@ -67,6 +67,15 @@
                 <option value="night">Night (11PM-5AM)</option>
             </select>
         </div>
+        <!-- 添加基础图层的 TTC 范围筛选框 -->
+        <div class="control-item">
+            <label for="layer-ttc-min">TTC Min for Selected Layer:</label>
+            <input type="number" id="layer-ttc-min" placeholder="0" value="0"> <!-- 设置默认值为 0 -->
+        </div>
+        <div class="control-item">
+            <label for="layer-ttc-max">TTC Max for Selected Layer:</label>
+            <input type="number" id="layer-ttc-max" placeholder="1" value="3"> <!-- 设置默认值为 3 -->
+        </div>
 
         <!-- 添加图层按钮 -->
         <div class="control-item">
@@ -85,14 +94,7 @@
         </div>
 
         <!-- Heat Map Analysis 按钮下，添加 TTC 范围输入框 -->
-        <div class="control-item">
-            <label for="min-ttc">TTC Min:</label>
-            <input type="number" id="min-ttc" placeholder="0">
-        </div>
-        <div class="control-item">
-            <label for="max-ttc">TTC Max:</label>
-            <input type="number" id="max-ttc" placeholder="1">
-        </div>
+
         <div class="control-item">
             <button onclick="generateHeatMap()">Heat Map Analysis</button>
         </div>
