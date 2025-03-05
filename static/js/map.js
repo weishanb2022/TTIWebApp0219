@@ -865,7 +865,7 @@
                 }
                 // 获取用户输入的 TTC 范围
                 const minTTC = parseFloat(document.getElementById('layer-ttc-min').value);
-                const maxTTC = parseFloat(document.getElementById('layer-ttc-min').value);
+                const maxTTC = parseFloat(document.getElementById('layer-ttc-max').value);
                 if (isNaN(minTTC) || isNaN(maxTTC)) {
                     alert('Please enter a valid TTC range.');
                     return;
